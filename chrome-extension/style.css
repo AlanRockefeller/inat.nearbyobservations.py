@@ -1,0 +1,78 @@
+/* iNaturalist Genus Proximity Finder - Styles */
+
+.genus-proximity-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 1000;
+}
+
+.genus-proximity-btn:hover {
+    background: linear-gradient(135deg, #218838, #1ea080);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.genus-proximity-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.genus-proximity-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.genus-proximity-btn:disabled:hover {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Make sure button is visible on different iNaturalist themes */
+.genus-proximity-btn {
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.genus-proximity-wrapper {
+  position: absolute;
+  top: 62px;
+  left: 786px;
+  z-index: 10000;
+  background: rgba(40,167,69,0.95);
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  max-width: 240px;
+  font-size: 12px;
+}
+
+.genus-proximity-label {
+  color: white;
+  font-weight: bold;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .genus-proximity-btn {
+        font-size: 12px;
+        padding: 6px 12px;
+        margin: 4px;
+    }
+}
