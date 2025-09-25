@@ -19,8 +19,8 @@ Since this is a browser extension, you'll need to load it manually into your bro
     *   **Chrome:** Toggle the "Developer mode" switch in the top right.
     *   **Firefox:** You might need to go to `about:config` and set `xpinstall.signatures.required` to `false` (use with caution!).
 4.  **Load Unpacked:**
-    *   **Chrome:** Click the "Load unpacked" button in the top left and select the `chrome-extension` folder.
-    *   **Firefox:** Click "Load Temporary Add-on..." and select any file within the `chrome-extension` folder.
+    *   **Chrome:** Click the "Load unpacked" button in the top left and select the `browser-extension` folder.
+    *   **Firefox:** Click "Load Temporary Add-on..." and select any file within the `browser-extension` folder.
 
 Your extension should now be active!
 
