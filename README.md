@@ -7,6 +7,8 @@ Ever been on an iNaturalist observation page and wondered what else is around fr
 
 Basically, when you're looking at an observation on iNaturalist, this extension adds a button. Click it, and it'll try its best to figure out the genus (or a higher taxonomic group if genus is tricky) of that observation. Then it'll open up a new iNaturalist search page showing you other observations of that same genus within a 10 km radius. Super useful for finding related species or just exploring what else is nearby.
 
+!(screenshot.jpg)
+
 ## How to Install
 
 Since this is a browser extension, you'll need to load it manually into your browser (like Chrome or Firefox).
