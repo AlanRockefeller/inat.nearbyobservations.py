@@ -36,7 +36,6 @@ Your extension should now be active!
 
 If the observation is identified to species level, the extension tries to find and use the genus for the search. If the observation is identified as a higher level taxon, it'll show nearby observations of that taxon.
 
-Hope this helps you discover more cool stuff on iNaturalist!
 
 
 --Alan Rockefeller
