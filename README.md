@@ -1,4 +1,6 @@
-# Nearby iNaturalist Genus Finder
+# Nearby iNaturalist Genus Finder + Browser Extension
+
+Note:   You'll probably want to use the browser extension rather than calling this manually - see README.browser-extension.md
 
 Ever been on an iNaturalist observation page and wondered what else is around from the same genus?   This tool makes it easy to check - I like to use it to see what other people have identified nearby observations as, or if someone gives you an ID, find nearby observations that it also might apply to.
 
