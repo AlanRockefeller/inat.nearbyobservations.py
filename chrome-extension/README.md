@@ -27,7 +27,7 @@ Your extension should now be active!
 ## How to Use It
 
 1.  Navigate to any observation page on [iNaturalist.org] - for example https://www.inaturalist.org/observations/313200882.
-2.  Look for a green button that says **"🔍 Find Nearby Genus"**. It usually pops up near the top of the page.
+2.  Look for a green button that says **"🔍 Find Nearby"**. It usually pops up near the top of the page.
 3.  Click that button!
 4.  A new tab will open showing you iNaturalist observations of the same genus nearby. 
 

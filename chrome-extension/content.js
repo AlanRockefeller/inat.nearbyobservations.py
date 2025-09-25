@@ -58,8 +58,8 @@ class iNatGenusProximityFinder {
     this.button = document.createElement('button');
     this.button.id = 'genus-proximity-button';
     this.button.className = 'genus-proximity-btn';
-    this.button.innerHTML = '🔍 Find Nearby Genus';
-    this.button.title = 'Find nearby observations of the same genus (or taxon) within 1 km';
+    this.button.innerHTML = '🔍 Find Nearby';
+    this.button.title = 'Find nearby observations of the same genus (or taxon) within 10 km';
 
     this.button.addEventListener('click', (e) => {
       e.preventDefault();
@@ -116,7 +116,7 @@ class iNatGenusProximityFinder {
       this.button.innerHTML = '⏳ Loading...';
       this.button.disabled = true;
     } else {
-      this.button.innerHTML = '🔍 Find Nearby Genus';
+      this.button.innerHTML = '🔍 Find Nearby';
       this.button.disabled = false;
     }
   }
