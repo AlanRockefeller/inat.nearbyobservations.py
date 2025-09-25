@@ -1,4 +1,4 @@
-# Nearby iNaturalist Genus Finder + Browser Extension
+# Nearby iNaturalist Genus Finder 
 
 Note:   You'll probably want to use the browser extension rather than calling this manually - see README.browser-extension.md
 
