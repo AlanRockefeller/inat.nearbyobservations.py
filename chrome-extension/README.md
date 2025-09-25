@@ -1,4 +1,4 @@
-# iNaturalist Genus Proximity Finder 🔍🌿
+# iNaturalist Genus Proximity Finder 
 
 Ever been on an iNaturalist observation page and wondered what else is around from the same genus?   This browser extension makes it easy to check - I like to use it to see what other people have identified nearby observations as, or if someone gives you an ID, find nearby observations that it also might apply to.
 
