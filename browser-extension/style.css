@@ -68,6 +68,21 @@
   margin-bottom: 4px;
 }
 
+#genus-proximity-close-button {
+  position: absolute;
+  top: 0px;
+  right: 5px;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+#genus-proximity-close-button:hover {
+  color: #e9ecef;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .genus-proximity-btn {

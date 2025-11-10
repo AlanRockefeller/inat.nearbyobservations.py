@@ -1,8 +1,8 @@
 // iNaturalist Genus Proximity Finder - Content Script (full)
 //
-// By Alan Rockefeller - September 24, 2025
+// By Alan Rockefeller - November 10, 2025
 // 
-// Version 1.0
+// Version 1.1
 
 class iNatGenusProximityFinder {
   constructor() {
@@ -52,7 +52,7 @@ class iNatGenusProximityFinder {
 
   createButton() {
     // remove existing
-    const existing = document.getElementById('genus-proximity-button');
+    const existing = document.getElementById('genus-proximity-button-wrapper');
     if (existing) existing.remove();
 
     this.button = document.createElement('button');
@@ -68,12 +68,22 @@ class iNatGenusProximityFinder {
 
     // Add an overlayed button for guaranteed visibility
     const buttonWrapper = document.createElement('div');
+    buttonWrapper.id = 'genus-proximity-button-wrapper';
     buttonWrapper.className = 'genus-proximity-wrapper';
 
     const label = document.createElement('div');
     label.textContent = 'Find Nearby:';
     label.className = 'genus-proximity-label';
 
+    const closeButton = document.createElement('div');
+    closeButton.id = 'genus-proximity-close-button';
+    closeButton.innerHTML = '&times;';
+    closeButton.title = 'Hide this panel';
+    closeButton.addEventListener('click', () => {
+      buttonWrapper.style.display = 'none';
+    });
+
+    buttonWrapper.appendChild(closeButton);
     buttonWrapper.appendChild(label);
     buttonWrapper.appendChild(this.button);
     document.body.appendChild(buttonWrapper);
