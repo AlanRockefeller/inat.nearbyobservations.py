@@ -43,7 +43,7 @@ You will need:
 
 ✅ **You should end up with a folder** that contains a subfolder named:
 
-`chrome-extension`
+`browser-extension`
 
 ---
 
@@ -55,13 +55,13 @@ You will need:
    and press **Enter**.
 3. Turn on **Developer mode** (top-right switch).
 4. Click **Load unpacked**.
-5. Select the folder named **`chrome-extension`**.
+5. Select the folder named **`browser-extension`**.
 
 ✅ **You should now see the extension appear in your extensions list.**  
 If it worked, it will have a name and an “Enabled” toggle.
 
 ### If Chrome says it can’t load it
-- Make sure you selected the **`chrome-extension`** folder itself (not the parent folder).
+- Make sure you selected the **`browser-extension`** folder itself (not the parent folder).
 - Make sure the folder contains a `manifest.json` file inside it.
 
 ---
@@ -79,7 +79,7 @@ To install:
    `about:debugging#/runtime/this-firefox`  
    and press **Enter**.
 3. Click **Load Temporary Add-on…**
-4. Open the **`chrome-extension`** folder.
+4. Open the **`browser-extension`** folder.
 5. Select the file named **`manifest.json`**.
 
 ✅ **You should see the extension listed as a temporary add-on.**
