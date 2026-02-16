@@ -77,6 +77,9 @@
   font-weight: bold;
   cursor: pointer;
   line-height: 1;
+  background: none;
+  border: none;
+  padding: 0;
 }
 
 #genus-proximity-close-button:hover {
