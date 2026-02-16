@@ -72,13 +72,15 @@ class iNatGenusProximityFinder {
     buttonWrapper.className = 'genus-proximity-wrapper';
 
     const label = document.createElement('div');
-    label.textContent = 'Find Nearby:';
+//    label.textContent = 'Find Nearby:';  
     label.className = 'genus-proximity-label';
 
-    const closeButton = document.createElement('div');
+    const closeButton = document.createElement('button');
     closeButton.id = 'genus-proximity-close-button';
     closeButton.innerHTML = '&times;';
     closeButton.title = 'Hide this panel';
+    closeButton.setAttribute('aria-label', 'Close');
+    closeButton.type = 'button';
     closeButton.addEventListener('click', () => {
       buttonWrapper.style.display = 'none';
     });
