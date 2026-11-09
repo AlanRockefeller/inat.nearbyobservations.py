@@ -3,7 +3,8 @@
 .genus-proximity-btn {
     background: linear-gradient(135deg, #28a745, #20c997);
     color: white;
-    border: none;
+    /* Keeps the button visible on different iNaturalist themes */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-radius: 6px;
     padding: 8px 16px;
     font-size: 14px;
@@ -43,15 +44,12 @@
     box-shadow: none;
 }
 
-/* Make sure button is visible on different iNaturalist themes */
-.genus-proximity-btn {
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
 .genus-proximity-wrapper {
   position: absolute;
   top: 62px;
-  left: 786px;
+  /* Sits beside the observation title on a wide window; slides left on a
+     narrower one so it never ends up off-screen. */
+  left: max(8px, min(786px, calc(100vw - 270px)));
   /* Above page content and dropdowns (1000), but below iNaturalist's
      Bootstrap modal backdrop (1040) so expanded photos cover the panel. */
   z-index: 1010;
@@ -61,13 +59,6 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   max-width: 240px;
   font-size: 12px;
-}
-
-.genus-proximity-label {
-  color: white;
-  font-weight: bold;
-  font-size: 11px;
-  margin-bottom: 4px;
 }
 
 #genus-proximity-close-button {
@@ -115,6 +106,26 @@
   opacity: 0.5;
   cursor: not-allowed;
   background: rgba(255, 255, 255, 0.1);
+}
+
+/* Notes and errors shown inside the panel */
+.genus-proximity-status {
+  color: white;
+  font-size: 11px;
+  line-height: 1.35;
+  margin: 4px 8px 2px;
+  max-width: 200px;
+}
+
+.genus-proximity-status[hidden] {
+  display: none;
+}
+
+.genus-proximity-status-error {
+  background: rgba(0, 0, 0, 0.35);
+  border-left: 3px solid #ffc107;
+  border-radius: 3px;
+  padding: 4px 6px;
 }
 
 /* Responsive adjustments */
