@@ -1,19 +1,20 @@
 // iNaturalist Genus Proximity Finder - Content Script (full)
 //
 // By Alan Rockefeller - November 10, 2025
-// 
-// Version 1.1
+//
+// Version 1.2
 
 class iNatGenusProximityFinder {
   constructor() {
     this.button = null;
+    this.allButtons = [];
     this.observationId = null;
     this.init();
   }
 
   init() {
     console.log('iNat Genus Finder: Extension initializing...');
-    this.setup(); 
+    this.setup();
 
     const observer = new MutationObserver(() => {
       this.setup();
@@ -63,7 +64,7 @@ class iNatGenusProximityFinder {
 
     this.button.addEventListener('click', (e) => {
       e.preventDefault();
-      this.handleButtonClick();
+      this.handleSearch('default');
     });
 
     // Add an overlayed button for guaranteed visibility
@@ -72,7 +73,7 @@ class iNatGenusProximityFinder {
     buttonWrapper.className = 'genus-proximity-wrapper';
 
     const label = document.createElement('div');
-//    label.textContent = 'Find Nearby:';  
+//    label.textContent = 'Find Nearby:';
     label.className = 'genus-proximity-label';
 
     const closeButton = document.createElement('button');
@@ -88,13 +89,40 @@ class iNatGenusProximityFinder {
     buttonWrapper.appendChild(closeButton);
     buttonWrapper.appendChild(label);
     buttonWrapper.appendChild(this.button);
+
+    // Small buttons row: day, Obs, big
+    const smallRow = document.createElement('div');
+    smallRow.className = 'genus-proximity-small-row';
+
+    this.allButtons = [this.button];
+
+    const modes = [
+      { label: 'day', mode: 'day', title: 'Same genus, same day, 10 km' },
+      { label: 'Obs', mode: 'obscured', title: 'Same genus, same month, obscured-friendly 32 km' },
+      { label: 'big', mode: 'big', title: 'Same genus, 1000 km radius' },
+    ];
+
+    for (const { label: text, mode, title } of modes) {
+      const btn = document.createElement('button');
+      btn.className = 'genus-proximity-btn-small';
+      btn.textContent = text;
+      btn.title = title;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.handleSearch(mode);
+      });
+      smallRow.appendChild(btn);
+      this.allButtons.push(btn);
+    }
+
+    buttonWrapper.appendChild(smallRow);
     document.body.appendChild(buttonWrapper);
 
     console.log('iNat Genus Finder: Button added as positioned overlay');
   }
 
-  async handleButtonClick() {
-    this.setButtonLoading(true);
+  async handleSearch(mode) {
+    this.setAllButtonsLoading(true);
     try {
       const obs = await this.fetchObservationData();
       const {
@@ -105,9 +133,8 @@ class iNatGenusProximityFinder {
         chosenTaxonRank
       } = await this.extractTaxonData(obs);
 
-      const url = this.generateProximityUrl(latitude, longitude, chosenTaxonId, chosenTaxonName);
+      const url = this.buildSearchUrl(mode, obs, latitude, longitude, chosenTaxonId, chosenTaxonName);
 
-      // Open the URL directly in a new window
       const newWindow = window.open(url, '_blank');
       if (!newWindow) {
         // Handle pop-up blocker by redirecting the current window
@@ -118,18 +145,16 @@ class iNatGenusProximityFinder {
       console.error('iNat Genus Finder Error:', err);
       alert(`Error: ${err.message || err}`);
     } finally {
-      this.setButtonLoading(false);
+      this.setAllButtonsLoading(false);
     }
   }
 
-  setButtonLoading(loading) {
-    if (!this.button) return;
-    if (loading) {
-      this.button.innerHTML = '⏳ Loading...';
-      this.button.disabled = true;
-    } else {
-      this.button.innerHTML = '🔍 Find Nearby';
-      this.button.disabled = false;
+  setAllButtonsLoading(loading) {
+    for (const btn of this.allButtons) {
+      btn.disabled = loading;
+    }
+    if (this.button) {
+      this.button.innerHTML = loading ? '⏳ Loading...' : '🔍 Find Nearby';
     }
   }
 
@@ -300,22 +325,76 @@ class iNatGenusProximityFinder {
     throw new Error(`No match found for genus '${genusName}'`);
   }
 
-  generateProximityUrl(latitude, longitude, taxonId, taxonName) {
+  buildSearchUrl(mode, obs, latitude, longitude, taxonId, taxonName) {
     const params = new URLSearchParams({
       lat: latitude,
       lng: longitude,
-      radius: 10,
       subview: 'map'
     });
 
-    // prefer taxon_id when available (more robust)
     if (taxonId) {
       params.set('taxon_id', taxonId);
     } else if (taxonName) {
       params.set('taxon_name', taxonName);
     }
 
+    switch (mode) {
+      case 'default':
+        params.set('radius', 10);
+        break;
+
+      case 'day': {
+        params.set('radius', 10);
+        // Use observed_on (date the observation was made in the observer's local time).
+        // Falls back to created_at (upload date) if observed_on is unavailable.
+        const dayDate = this.getObservedDate(obs);
+        if (dayDate) params.set('on', dayDate);
+        break;
+      }
+
+      case 'obscured': {
+        // iNaturalist obscures coordinates by randomizing within a 0.2° x 0.2° box
+        // (±0.1° in each direction). Max displacement from true location ≈ 15.7 km
+        // (diagonal of the ±0.1° square). If both the current and target observations
+        // are obscured, their displayed points can be up to ~31.4 km apart even when
+        // the true locations are identical. 32 km is the smallest integer radius that
+        // covers this worst case.
+        params.set('radius', 32);
+        const month = this.getObservedMonth(obs);
+        if (month) params.set('month', month);
+        // No geoprivacy filter — iNat search includes obscured observations by
+        // default. Their coordinates are randomized but they still appear in
+        // geographic searches; the expanded radius accounts for the coordinate shift.
+        break;
+      }
+
+      case 'big':
+        params.set('radius', 1000);
+        break;
+    }
+
     return `https://www.inaturalist.org/observations?${params.toString()}`;
+  }
+
+  // Returns YYYY-MM-DD string, or null.
+  // Prefers observed_on (observer's local date); falls back to created_at (upload timestamp).
+  getObservedDate(obs) {
+    if (obs.observed_on) return obs.observed_on;
+    if (obs.created_at) return obs.created_at.slice(0, 10);
+    return null;
+  }
+
+  // Returns month number (1-12), or null.
+  getObservedMonth(obs) {
+    if (obs.observed_on_details && obs.observed_on_details.month) {
+      return obs.observed_on_details.month;
+    }
+    const date = this.getObservedDate(obs);
+    if (date) {
+      const month = parseInt(date.slice(5, 7), 10);
+      if (month >= 1 && month <= 12) return month;
+    }
+    return null;
   }
 
   capitalizeFirstLetter(str) {

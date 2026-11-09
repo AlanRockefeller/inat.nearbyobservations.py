@@ -52,7 +52,9 @@
   position: absolute;
   top: 62px;
   left: 786px;
-  z-index: 10000;
+  /* Above page content and dropdowns (1000), but below iNaturalist's
+     Bootstrap modal backdrop (1040) so expanded photos cover the panel. */
+  z-index: 1010;
   background: rgba(40,167,69,0.95);
   padding: 8px 12px;
   border-radius: 6px;
@@ -86,11 +88,45 @@
   color: #e9ecef;
 }
 
+/* Small buttons row */
+.genus-proximity-small-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 0 8px 4px;
+}
+
+.genus-proximity-btn-small {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.genus-proximity-btn-small:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.genus-proximity-btn-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.1);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .genus-proximity-btn {
         font-size: 12px;
         padding: 6px 12px;
         margin: 4px;
+    }
+
+    .genus-proximity-btn-small {
+        font-size: 10px;
+        padding: 2px 6px;
     }
 }

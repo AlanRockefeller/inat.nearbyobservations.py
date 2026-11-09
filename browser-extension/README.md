@@ -21,6 +21,13 @@ When you click it:
 
 If the observation isn’t identified to genus, it will use a higher group (family/order/etc.) when needed.
 
+Below the main button are three smaller buttons:
+- **day** — Same as Find Nearby, but only shows observations from the same day.
+- **Obs** — Same genus within 32 km, filtered to the same month. The larger radius accounts for iNaturalist coordinate obscuration (~0.2° randomization), so obscured observations made at the same real location can still be found.
+- **big** — Same genus within 1000 km.
+
+The panel stays out of the way when you expand an observation photo: the enlarged photo covers it. You can also hide the panel with the **×** in its corner; it comes back when you reload the page.
+
 ---
 
 ## Before you start (important)
@@ -115,4 +122,4 @@ To install:
 ---
 
 —Alan Rockefeller  
-February 16, 2026
+November 9, 2026
