@@ -1,46 +1,45 @@
 // iNaturalist Genus Proximity Finder - Content Script (full)
 //
-// By Alan Rockefeller - November 10, 2025
-// 
-// Version 1.1
+// By Alan Rockefeller - November 9, 2026
+//
+// Version 1.2
+
+// iNaturalist rank_level of a genus. Anything with a lower level (subgenus,
+// section, complex, species, hybrid, subspecies, variety, form...) sits inside
+// a genus and gets promoted to it.
+const GENUS_RANK_LEVEL = 20;
+
+// Used only when the API response has no rank_level.
+const BELOW_GENUS_RANKS = [
+  'subgenus', 'section', 'subsection', 'complex',
+  'species', 'hybrid', 'subspecies', 'variety', 'form', 'infrahybrid', 'infraspecies'
+];
+
+// Search radii in km.
+const RADIUS_DEFAULT = 10;
+// iNaturalist obscures a location by replacing it with a random point inside
+// the 0.2° x 0.2° grid cell that contains the true location. Two observations
+// made at the same spot can therefore be shown up to one cell diagonal apart
+// (about 31.4 km at the equator, less elsewhere). 32 km is the smallest whole
+// radius that covers that worst case.
+const RADIUS_OBSCURED = 32;
+const RADIUS_BIG = 1000;
 
 class iNatGenusProximityFinder {
   constructor() {
     this.button = null;
+    this.allButtons = [];
+    this.status = null;
     this.observationId = null;
     this.init();
   }
 
   init() {
-    console.log('iNat Genus Finder: Extension initializing...');
-    this.setup(); 
-
-    const observer = new MutationObserver(() => {
-      this.setup();
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-  }
-
-  setup() {
-    // Prevent running setup multiple times
-    if (this.button) {
-      return;
-    }
-    console.log('iNat Genus Finder: Setting up extension...');
-    console.log('Current URL:', window.location.href);
-
+    // The manifest also matches pages such as /observations/identify, which
+    // have no observation ID. Do nothing there.
     this.extractObservationId();
-    console.log('Extracted observation ID:', this.observationId);
-
-    if (this.observationId) {
-      this.createButton();
-    } else {
-      console.log('iNat Genus Finder: No observation ID found, not adding button');
-    }
+    if (!this.observationId) return;
+    this.createButton();
   }
 
   extractObservationId() {
@@ -59,21 +58,17 @@ class iNatGenusProximityFinder {
     this.button.id = 'genus-proximity-button';
     this.button.className = 'genus-proximity-btn';
     this.button.innerHTML = '🔍 Find Nearby';
-    this.button.title = 'Find nearby observations of the same genus (or taxon) within 10 km';
+    this.button.title = 'Find nearby observations of the same genus (or taxon) within 10 km (32 km if the location is obscured)';
 
     this.button.addEventListener('click', (e) => {
       e.preventDefault();
-      this.handleButtonClick();
+      this.handleSearch('default');
     });
 
     // Add an overlayed button for guaranteed visibility
     const buttonWrapper = document.createElement('div');
     buttonWrapper.id = 'genus-proximity-button-wrapper';
     buttonWrapper.className = 'genus-proximity-wrapper';
-
-    const label = document.createElement('div');
-//    label.textContent = 'Find Nearby:';  
-    label.className = 'genus-proximity-label';
 
     const closeButton = document.createElement('button');
     closeButton.id = 'genus-proximity-close-button';
@@ -86,50 +81,93 @@ class iNatGenusProximityFinder {
     });
 
     buttonWrapper.appendChild(closeButton);
-    buttonWrapper.appendChild(label);
     buttonWrapper.appendChild(this.button);
-    document.body.appendChild(buttonWrapper);
 
-    console.log('iNat Genus Finder: Button added as positioned overlay');
+    // Small buttons row: day, Obs, big
+    const smallRow = document.createElement('div');
+    smallRow.className = 'genus-proximity-small-row';
+
+    this.allButtons = [this.button];
+
+    const modes = [
+      { label: 'day', mode: 'day', title: 'Same genus, same day, 10 km (32 km if the location is obscured)' },
+      { label: 'Obs', mode: 'obscured', title: 'Same genus, same month, 32 km (for obscured locations)' },
+      { label: 'big', mode: 'big', title: 'Same genus, 1000 km radius' },
+    ];
+
+    for (const { label: text, mode, title } of modes) {
+      const btn = document.createElement('button');
+      btn.className = 'genus-proximity-btn-small';
+      btn.textContent = text;
+      btn.title = title;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.handleSearch(mode);
+      });
+      smallRow.appendChild(btn);
+      this.allButtons.push(btn);
+    }
+
+    buttonWrapper.appendChild(smallRow);
+
+    // Notes and errors are shown here instead of in a blocking alert().
+    this.status = document.createElement('div');
+    this.status.className = 'genus-proximity-status';
+    this.status.setAttribute('role', 'status');
+    this.status.hidden = true;
+    buttonWrapper.appendChild(this.status);
+
+    document.body.appendChild(buttonWrapper);
   }
 
-  async handleButtonClick() {
-    this.setButtonLoading(true);
+  async handleSearch(mode) {
+    this.setAllButtonsLoading(true);
+    this.showStatus(null);
     try {
       const obs = await this.fetchObservationData();
       const {
         latitude,
         longitude,
         chosenTaxonId,
-        chosenTaxonName,
-        chosenTaxonRank
+        chosenTaxonName
       } = await this.extractTaxonData(obs);
 
-      const url = this.generateProximityUrl(latitude, longitude, chosenTaxonId, chosenTaxonName);
+      const url = this.buildSearchUrl(mode, obs, latitude, longitude, chosenTaxonId, chosenTaxonName);
 
-      // Open the URL directly in a new window
       const newWindow = window.open(url, '_blank');
       if (!newWindow) {
         // Handle pop-up blocker by redirecting the current window
         window.location.href = url;
+        return;
       }
 
+      if (obs.obscured && (mode === 'default' || mode === 'day')) {
+        this.showStatus(
+          `This location is obscured, so the search used ${RADIUS_OBSCURED} km instead of ${RADIUS_DEFAULT} km.`
+        );
+      }
     } catch (err) {
       console.error('iNat Genus Finder Error:', err);
-      alert(`Error: ${err.message || err}`);
+      this.showStatus(err.message || String(err), true);
     } finally {
-      this.setButtonLoading(false);
+      this.setAllButtonsLoading(false);
     }
   }
 
-  setButtonLoading(loading) {
-    if (!this.button) return;
-    if (loading) {
-      this.button.innerHTML = '⏳ Loading...';
-      this.button.disabled = true;
-    } else {
-      this.button.innerHTML = '🔍 Find Nearby';
-      this.button.disabled = false;
+  // Show a note (or an error) inside the panel. Pass null to clear it.
+  showStatus(message, isError = false) {
+    if (!this.status) return;
+    this.status.textContent = message || '';
+    this.status.hidden = !message;
+    this.status.classList.toggle('genus-proximity-status-error', Boolean(message) && isError);
+  }
+
+  setAllButtonsLoading(loading) {
+    for (const btn of this.allButtons) {
+      btn.disabled = loading;
+    }
+    if (this.button) {
+      this.button.innerHTML = loading ? '⏳ Loading...' : '🔍 Find Nearby';
     }
   }
 
@@ -145,8 +183,18 @@ class iNatGenusProximityFinder {
     return data.results[0];
   }
 
+  // True when the taxon sits inside a genus (subgenus, section, complex,
+  // species, hybrid, subspecies, variety, form...).
+  isBelowGenus(taxon) {
+    if (typeof taxon.rank_level === 'number') {
+      return taxon.rank_level < GENUS_RANK_LEVEL;
+    }
+    const rank = (taxon.rank || '').toLowerCase();
+    return BELOW_GENUS_RANKS.includes(rank) || rank.includes('species');
+  }
+
   // Extract the appropriate taxon to use:
-  // - If the observation is species (or lower), try to promote to genus (preferred behavior)
+  // - If the observation is below genus (species, complex, section, etc.), promote to genus
   // - If genus, use genus
   // - If higher than genus (family/order/etc.), use that taxon as-is
   async extractTaxonData(obsData) {
@@ -194,9 +242,9 @@ class iNatGenusProximityFinder {
       console.log('Using taxon (genus):', chosenTaxon.name, chosenTaxon.id);
     }
 
-    // 2) If identified to species/subspecies/etc., try to find genus
-    else if (['species', 'subspecies', 'variety', 'form', 'infraspecies'].includes(rank) || rank.includes('species')) {
-      console.log('Observation identified to species-level; trying to promote to genus.');
+    // 2) If identified below genus (species, complex, section, subgenus, etc.), try to find genus
+    else if (this.isBelowGenus(taxon)) {
+      console.log('Observation identified below genus; trying to promote to genus.');
 
       // (a) check ancestors array (most reliable)
       if (Array.isArray(taxon.ancestors) && taxon.ancestors.length) {
@@ -213,20 +261,22 @@ class iNatGenusProximityFinder {
         console.log('Found genus in parent object:', chosenTaxon.name);
       }
 
-      // (c) if parent_id present, fetch it
-      if (!chosenTaxon.id && taxon.parent_id) {
+      // (c) fetch the taxon itself, which includes its full ancestor list
+      if (!chosenTaxon.id && taxon.id) {
         try {
-          const parentResp = await fetch(`https://api.inaturalist.org/v1/taxa/${taxon.parent_id}`);
-          if (parentResp.ok) {
-            const parentData = await parentResp.json();
-            const parentTaxon = parentData.results && parentData.results[0];
-            if (parentTaxon && parentTaxon.rank && parentTaxon.rank.toLowerCase() === 'genus') {
-              setChosenTaxon(parentTaxon, 'genus');
-              console.log('Found genus via parent_id fetch:', chosenTaxon.name);
+          const taxonResp = await fetch(`https://api.inaturalist.org/v1/taxa/${taxon.id}`);
+          if (taxonResp.ok) {
+            const taxonData = await taxonResp.json();
+            const fullTaxon = taxonData.results && taxonData.results[0];
+            const ancestors = (fullTaxon && fullTaxon.ancestors) || [];
+            const genAnc = ancestors.find(a => a && a.rank && a.rank.toLowerCase() === 'genus');
+            if (genAnc) {
+              setChosenTaxon(genAnc, 'genus');
+              console.log('Found genus via taxon fetch:', chosenTaxon.name);
             }
           }
         } catch (err) {
-          console.warn('Parent fetch failed:', err);
+          console.warn('Taxon fetch failed:', err);
         }
       }
 
@@ -248,10 +298,10 @@ class iNatGenusProximityFinder {
         }
       }
 
-      // (e) fallback to species itself if no genus could be found
+      // (e) fallback to the taxon itself if no genus could be found
       if (!chosenTaxon.id) {
         setChosenTaxon(taxon, rank || 'species');
-        console.warn('Could not determine genus — falling back to species taxon:', chosenTaxon.name);
+        console.warn('Could not determine genus — falling back to the observation taxon:', chosenTaxon.name);
       }
     }
 
@@ -266,8 +316,7 @@ class iNatGenusProximityFinder {
       latitude,
       longitude,
       chosenTaxonId: chosenTaxon.id,
-      chosenTaxonName: chosenTaxon.name,
-      chosenTaxonRank: chosenTaxon.rank
+      chosenTaxonName: chosenTaxon.name
     };
   }
 
@@ -300,38 +349,75 @@ class iNatGenusProximityFinder {
     throw new Error(`No match found for genus '${genusName}'`);
   }
 
-  generateProximityUrl(latitude, longitude, taxonId, taxonName) {
+  buildSearchUrl(mode, obs, latitude, longitude, taxonId, taxonName) {
     const params = new URLSearchParams({
       lat: latitude,
       lng: longitude,
-      radius: 10,
       subview: 'map'
     });
 
-    // prefer taxon_id when available (more robust)
     if (taxonId) {
       params.set('taxon_id', taxonId);
     } else if (taxonName) {
       params.set('taxon_name', taxonName);
     }
 
+    // An obscured observation is shown at a random point near its true
+    // location, so a 10 km search around that point can miss everything that
+    // was really nearby. Widen the search for those.
+    const nearbyRadius = obs.obscured ? RADIUS_OBSCURED : RADIUS_DEFAULT;
+
+    switch (mode) {
+      case 'default':
+        params.set('radius', nearbyRadius);
+        break;
+
+      case 'day': {
+        params.set('radius', nearbyRadius);
+        // Use observed_on (date the observation was made in the observer's local time).
+        // Falls back to created_at (upload date) if observed_on is unavailable.
+        const dayDate = this.getObservedDate(obs);
+        if (dayDate) params.set('on', dayDate);
+        break;
+      }
+
+      case 'obscured': {
+        // No geoprivacy filter — iNat search includes obscured observations by
+        // default. Their coordinates are randomized but they still appear in
+        // geographic searches; the wider radius accounts for the coordinate shift.
+        params.set('radius', RADIUS_OBSCURED);
+        const month = this.getObservedMonth(obs);
+        if (month) params.set('month', month);
+        break;
+      }
+
+      case 'big':
+        params.set('radius', RADIUS_BIG);
+        break;
+    }
+
     return `https://www.inaturalist.org/observations?${params.toString()}`;
   }
 
-  capitalizeFirstLetter(str) {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
+  // Returns YYYY-MM-DD string, or null.
+  // Prefers observed_on (observer's local date); falls back to created_at (upload timestamp).
+  getObservedDate(obs) {
+    if (obs.observed_on) return obs.observed_on;
+    if (obs.created_at) return obs.created_at.slice(0, 10);
+    return null;
   }
 
-  // Minimal escaping helpers
-  escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-  escapeAttribute(str) {
-    return String(str).replace(/"/g, '&quot;');
+  // Returns month number (1-12), or null.
+  getObservedMonth(obs) {
+    if (obs.observed_on_details && obs.observed_on_details.month) {
+      return obs.observed_on_details.month;
+    }
+    const date = this.getObservedDate(obs);
+    if (date) {
+      const month = parseInt(date.slice(5, 7), 10);
+      if (month >= 1 && month <= 12) return month;
+    }
+    return null;
   }
 }
 

@@ -19,7 +19,16 @@ When you click it:
 1. The extension looks at the observation’s identification (genus if possible).
 2. It opens a **new iNaturalist search tab** showing other observations of that same group **within 10 km**.
 
-If the observation isn’t identified to genus, it will use a higher group (family/order/etc.) when needed.
+If the observation is identified more finely than genus (species, subspecies, complex, section, subgenus, hybrid…), the search uses its genus. If it is only identified to a higher group (family/order/etc.), the search uses that group.
+
+If the observation’s location is **obscured**, iNaturalist shows it at a random point near the real one, so the search widens to **32 km** and the panel tells you so.
+
+Below the main button are three smaller buttons:
+- **day** — Same as Find Nearby (including the wider radius for obscured locations), but only shows observations from the same day.
+- **Obs** — Same genus within 32 km, filtered to the same month. The larger radius accounts for iNaturalist coordinate obscuration (~0.2° randomization), so obscured observations made at the same real location can still be found.
+- **big** — Same genus within 1000 km.
+
+The panel stays out of the way when you expand an observation photo: the enlarged photo covers it. You can also hide the panel with the **×** in its corner; it comes back when you reload the page.
 
 ---
 
@@ -110,9 +119,16 @@ To install:
 
 **It installed, but nothing happens when I click**
 - Check if your browser blocked popups from iNaturalist (allow popups for the site)
+- Look for a message inside the green panel — problems such as an observation with no location are reported there
 - Try a different observation page
 
 ---
 
+## For developers
+
+After changing anything in `browser-extension/`, run `./build-zip.sh` from the top of the project to rebuild `browser-extension.zip`.
+
+---
+
 —Alan Rockefeller  
-February 16, 2026
+November 9, 2026
