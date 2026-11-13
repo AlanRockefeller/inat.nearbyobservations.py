@@ -1,25 +1,34 @@
 {
   "manifest_version": 3,
-  "name": "iNaturalist Genus Proximity Finder",
-  "version": "1.2",
+  "name": "Genus Proximity Finder for iNaturalist",
+  "version": "1.3",
   "description": "Find nearby observations of the same genus on iNaturalist",
   "host_permissions": [
     "https://api.inaturalist.org/*"
   ],
   "content_scripts": [
     {
-      "matches": ["https://www.inaturalist.org/observations/*"],
+      "matches": ["https://*.inaturalist.org/observations/*"],
       "js": ["content.js"],
       "css": ["style.css"]
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "iNaturalist Genus Finder"
+    "default_title": "Genus Proximity Finder for iNaturalist"
   },
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
     "128": "icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "inat-genus-proximity-finder@alanrockefeller",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
   }
 }

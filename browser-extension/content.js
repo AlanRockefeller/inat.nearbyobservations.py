@@ -1,8 +1,8 @@
-// iNaturalist Genus Proximity Finder - Content Script (full)
+// Genus Proximity Finder for iNaturalist - Content Script
 //
-// By Alan Rockefeller - November 9, 2026
+// By Alan Rockefeller - November 12, 2026
 //
-// Version 1.2
+// Version 1.3
 
 // iNaturalist rank_level of a genus. Anything with a lower level (subgenus,
 // section, complex, species, hybrid, subspecies, variety, form...) sits inside
@@ -24,6 +24,10 @@ const RADIUS_DEFAULT = 10;
 // radius that covers that worst case.
 const RADIUS_OBSCURED = 32;
 const RADIUS_BIG = 1000;
+
+// Set to true to log taxon resolution details to the browser console.
+const DEBUG = false;
+const debugLog = (...args) => { if (DEBUG) console.log('[Genus Finder]', ...args); };
 
 class iNatGenusProximityFinder {
   constructor() {
@@ -57,7 +61,7 @@ class iNatGenusProximityFinder {
     this.button = document.createElement('button');
     this.button.id = 'genus-proximity-button';
     this.button.className = 'genus-proximity-btn';
-    this.button.innerHTML = '🔍 Find Nearby';
+    this.button.textContent = '🔍 Find Nearby';
     this.button.title = 'Find nearby observations of the same genus (or taxon) within 10 km (32 km if the location is obscured)';
 
     this.button.addEventListener('click', (e) => {
@@ -72,7 +76,7 @@ class iNatGenusProximityFinder {
 
     const closeButton = document.createElement('button');
     closeButton.id = 'genus-proximity-close-button';
-    closeButton.innerHTML = '&times;';
+    closeButton.textContent = '×';
     closeButton.title = 'Hide this panel';
     closeButton.setAttribute('aria-label', 'Close');
     closeButton.type = 'button';
@@ -147,7 +151,7 @@ class iNatGenusProximityFinder {
         );
       }
     } catch (err) {
-      console.error('iNat Genus Finder Error:', err);
+      console.error('Genus Proximity Finder error:', err);
       this.showStatus(err.message || String(err), true);
     } finally {
       this.setAllButtonsLoading(false);
@@ -167,7 +171,7 @@ class iNatGenusProximityFinder {
       btn.disabled = loading;
     }
     if (this.button) {
-      this.button.innerHTML = loading ? '⏳ Loading...' : '🔍 Find Nearby';
+      this.button.textContent = loading ? '⏳ Loading...' : '🔍 Find Nearby';
     }
   }
 
@@ -220,7 +224,7 @@ class iNatGenusProximityFinder {
       throw new Error("This observation doesn't have taxonomic information");
     }
 
-    console.log('Taxon data:', taxon);
+    debugLog('Taxon data:', taxon);
 
     let chosenTaxon = {
       id: null,
@@ -239,26 +243,26 @@ class iNatGenusProximityFinder {
     // 1) If the taxon itself is genus -> use it
     if (rank === 'genus') {
       setChosenTaxon(taxon, 'genus');
-      console.log('Using taxon (genus):', chosenTaxon.name, chosenTaxon.id);
+      debugLog('Using taxon (genus):', chosenTaxon.name, chosenTaxon.id);
     }
 
     // 2) If identified below genus (species, complex, section, subgenus, etc.), try to find genus
     else if (this.isBelowGenus(taxon)) {
-      console.log('Observation identified below genus; trying to promote to genus.');
+      debugLog('Observation identified below genus; trying to promote to genus.');
 
       // (a) check ancestors array (most reliable)
       if (Array.isArray(taxon.ancestors) && taxon.ancestors.length) {
         const genAnc = taxon.ancestors.find(a => a && a.rank && a.rank.toLowerCase() === 'genus');
         if (genAnc) {
           setChosenTaxon(genAnc, 'genus');
-          console.log('Found genus in ancestors:', chosenTaxon.name);
+          debugLog('Found genus in ancestors:', chosenTaxon.name);
         }
       }
 
       // (b) check parent object
       if (!chosenTaxon.id && taxon.parent && taxon.parent.rank && taxon.parent.rank.toLowerCase() === 'genus') {
         setChosenTaxon(taxon.parent, 'genus');
-        console.log('Found genus in parent object:', chosenTaxon.name);
+        debugLog('Found genus in parent object:', chosenTaxon.name);
       }
 
       // (c) fetch the taxon itself, which includes its full ancestor list
@@ -272,7 +276,7 @@ class iNatGenusProximityFinder {
             const genAnc = ancestors.find(a => a && a.rank && a.rank.toLowerCase() === 'genus');
             if (genAnc) {
               setChosenTaxon(genAnc, 'genus');
-              console.log('Found genus via taxon fetch:', chosenTaxon.name);
+              debugLog('Found genus via taxon fetch:', chosenTaxon.name);
             }
           }
         } catch (err) {
@@ -285,13 +289,13 @@ class iNatGenusProximityFinder {
         const scientificName = (taxon.name || '').trim();
         if (scientificName && !scientificName.startsWith('×') && scientificName.includes(' ')) {
           const potentialGenus = scientificName.split(/\s+/)[0].trim(); // <-- correct split
-          console.log('Potential genus extracted from name:', potentialGenus);
+          debugLog('Potential genus extracted from name:', potentialGenus);
           try {
             const foundId = await this.findGenusIdByName(potentialGenus);
             chosenTaxon.id = foundId;
             chosenTaxon.name = potentialGenus;
             chosenTaxon.rank = 'genus';
-            console.log('Found genus via taxa search:', chosenTaxon.name, foundId);
+            debugLog('Found genus via taxa search:', chosenTaxon.name, foundId);
           } catch (err) {
             console.warn('Could not find genus via taxa search:', err);
           }
@@ -308,10 +312,10 @@ class iNatGenusProximityFinder {
     // 3) If taxon is higher than genus (family/order/etc.), just use that taxon
     else {
       setChosenTaxon(taxon, rank || 'taxon');
-      console.log('Using higher-level taxon as provided:', chosenTaxon.rank, chosenTaxon.name);
+      debugLog('Using higher-level taxon as provided:', chosenTaxon.rank, chosenTaxon.name);
     }
 
-    console.log('Final chosen taxon:', { chosenTaxonName: chosenTaxon.name, chosenTaxonId: chosenTaxon.id, chosenTaxonRank: chosenTaxon.rank, latitude, longitude });
+    debugLog('Final chosen taxon:', { chosenTaxonName: chosenTaxon.name, chosenTaxonId: chosenTaxon.id, chosenTaxonRank: chosenTaxon.rank, latitude, longitude });
     return {
       latitude,
       longitude,
@@ -396,7 +400,9 @@ class iNatGenusProximityFinder {
         break;
     }
 
-    return `https://www.inaturalist.org/observations?${params.toString()}`;
+    // Stay on the site the user is on (www.inaturalist.org, or a network
+    // site such as mexico.inaturalist.org).
+    return `${window.location.origin}/observations?${params.toString()}`;
   }
 
   // Returns YYYY-MM-DD string, or null.
