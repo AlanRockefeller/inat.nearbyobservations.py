@@ -1,4 +1,4 @@
-# iNaturalist Genus Proximity Finder (Browser Extension)
+# Genus Proximity Finder for iNaturalist (Browser Extension)
 
 When you’re viewing an observation on **iNaturalist**, this extension adds a button that helps you quickly find **other nearby observations from the same genus** (or the closest taxonomic level available).
 
@@ -75,13 +75,13 @@ If it worked, it will have a name and an “Enabled” toggle.
 
 ---
 
-## Step 3 — Install in Firefox (temporary install)
+## Step 3 — Install in Firefox
 
-Firefox allows this extension as a **temporary add-on**, which means:
-- It works immediately
-- But you may need to re-load it after restarting Firefox
+Firefox needs version **140 or newer**.
 
-To install:
+### Temporary install (any Firefox)
+
+This works immediately, but Firefox removes the extension when it restarts, so you'll need to load it again each time.
 
 1. Open Firefox.
 2. In the address bar, type:  
@@ -93,7 +93,15 @@ To install:
 
 ✅ **You should see the extension listed as a temporary add-on.**
 
-> Note: Some Firefox setups restrict unsigned extensions more strictly than others. If you run into a “signing” or “not allowed” error, tell me what the message says and I’ll help you choose the safest workaround.
+### Permanent install (Firefox Developer Edition, Nightly or ESR only)
+
+Regular Firefox only installs extensions that Mozilla has signed. Firefox Developer Edition, Nightly and ESR let you turn that check off:
+
+1. In the address bar, type `about:config`, press **Enter**, and accept the warning.
+2. Search for `xpinstall.signatures.required` and set it to **false**.
+3. Go to `about:addons`, click the gear icon, choose **Install Add-on From File…**, and select `browser-extension.zip`.
+
+This turns off signature checks for every add-on, not just this one.
 
 ---
 
